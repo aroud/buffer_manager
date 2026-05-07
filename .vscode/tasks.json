@@ -1,0 +1,124 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cmake: configure debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cmake: build debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug"
+      ],
+      "dependsOn": [
+        "cmake: configure debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "ctest: debug",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "debug"
+      ],
+      "dependsOn": [
+        "cmake: build debug"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "cmake: configure benchmarks",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "benchmarks"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "cmake: build benchmarks",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "benchmarks"
+      ],
+      "dependsOn": [
+        "cmake: configure benchmarks"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "benchmarks: run",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/benchmarks/benchmarks/buffer_manager_benchmarks",
+      "dependsOn": [
+        "cmake: build benchmarks"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "clang-format: check",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "format-check"
+      ],
+      "dependsOn": [
+        "cmake: configure debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "clang-format: fix",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "format"
+      ],
+      "dependsOn": [
+        "cmake: configure debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: build and test",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "cmake: build debug",
+        "ctest: debug"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.path": "/usr/bin/clangd",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build/dev",
+    "--background-index",
+    "--completion-style=detailed",
+    "--header-insertion=iwyu",
+    "--clang-tidy"
+  ],
+  "cmake.configureOnOpen": true,
+  "cmake.useCMakePresets": "always",
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "*.h": "cpp"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  }
+}

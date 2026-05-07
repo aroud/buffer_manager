@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug buffer_manager_tests",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/tests/buffer_manager_tests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "cmake: build debug"
+    },
+    {
+      "name": "Debug selected CMake target",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "cmake: build debug"
+    }
+  ]
+}
