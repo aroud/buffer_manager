@@ -1,0 +1,17 @@
+Language: Cpp
+BasedOnStyle: Google
+Standard: c++20
+
+ColumnLimit: 80
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+SortIncludes: true
+IncludeBlocks: Regroup
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+FixNamespaceComments: true
+NamespaceIndentation: None

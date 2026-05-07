@@ -1,0 +1,27 @@
+# CMake build directories
+/build/
+/build-*/
+/cmake-build-*/
+
+# CMake local/user files
+/CMakeUserPresets.json
+/compile_commands.json
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/CTestTestfile.cmake
+/Testing/
+
+# Local tool caches
+/.cache/
+
+# Debug symbols
+*.dSYM/
+*.dSYM
+
+# Local data / benchmark scratch files
+*.db
+*.db-*
+
+# OS
+.DS_Store
