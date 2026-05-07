@@ -1,0 +1,4 @@
+#ifndef BUFFER_MANAGER_PAGE_H_
+#define BUFFER_MANAGER_PAGE_H_
+
+#endif  // BUFFER_MANAGER_PAGE_H_
