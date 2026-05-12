@@ -38,7 +38,7 @@ class PageGuard final {
   void MarkDirty();
   void Flush();
 
-  // Releases the pin before destruction, safe to call multiple times
+  // Releases the pin before destruction, safe to call repeatedly
   void Drop() noexcept;
 
  private:
@@ -47,8 +47,8 @@ class PageGuard final {
   PageGuard(BufferManager* manager, PageId page_id, Page* page) noexcept;
 
   BufferManager* manager_ = nullptr;
-  Page* page_ = nullptr;
   PageId page_id_ = 0;
+  Page* page_ = nullptr;
 };
 
 class BufferManager final {
@@ -68,10 +68,10 @@ class BufferManager final {
   // Loads an existing logical page and returns it pinned
   [[nodiscard]] PageGuard FetchPage(PageId page_id);
 
-  // Permanently deletes a logical page, throws if the page is currently pinned
+  // Permanently deletes a logical page, throws if it is pinned
   void DeletePage(PageId page_id);
 
-  // Explicitly flushes all dirty resident pages, may throw on I/O failure
+  // Explicitly flushes all dirty resident pages, throws on I/O failure
   void FlushAllPages();
 
   [[nodiscard]] std::size_t frame_count() const noexcept;
@@ -80,13 +80,8 @@ class BufferManager final {
  private:
   friend class PageGuard;
 
-  // Called only by PageGuard, including PageGuard::~PageGuard()
   void UnpinPage(PageId page_id) noexcept;
-
-  // Called only by PageGuard
   void MarkDirty(PageId page_id);
-
-  // Called only by PageGuard, may throw on I/O failure
   void FlushPage(PageId page_id);
 
   class Impl;

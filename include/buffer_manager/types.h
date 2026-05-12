@@ -10,7 +10,6 @@ inline constexpr std::size_t kPageSize = 1ULL << 12;
 
 using PageId = std::uint64_t;
 using FrameId = std::uint32_t;
-using DiskOffset = std::uint64_t;
 
 }  // namespace buffer_manager
 
