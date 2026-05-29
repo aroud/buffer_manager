@@ -1,6 +1,6 @@
 find_package(GTest CONFIG REQUIRED)
 
-add_executable(buffer_manager_tests testing_infra_test.cc)
+add_executable(buffer_manager_tests testing_infra_test.cc disk_manager_test.cc)
 
 target_include_directories(
   buffer_manager_tests
