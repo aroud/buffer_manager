@@ -45,7 +45,7 @@ cmake --build --preset format-check
 ```
 
 
-## DiskManager
+## Disk Manager
 
 `DiskManager` provides fixed-size page I/O for the buffer manager. Pages are 4 KiB and are stored in a single backing file.
 
