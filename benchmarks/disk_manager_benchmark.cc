@@ -27,12 +27,9 @@ constexpr std::int64_t kHugeBenchmarkIterations = 1024;
 
 constexpr std::size_t kRandomRequestCount = std::size_t{1} << 16;
 
-// Used by the regular AfterCachePollution benchmarks.
 // 64K pages * 4 KiB = 256 MiB.
 constexpr std::size_t kCachePollutionPageCount = std::size_t{64} * 1024;
 
-// Used by 4 GiB read benchmarks to reduce the chance that buffered reads
-// only measure pages left hot by the prewrite phase.
 constexpr std::size_t kHugeCachePollutionPageCount =
     static_cast<std::size_t>(kHugeBenchmarkPageCount);
 
@@ -541,8 +538,6 @@ BENCHMARK(BM_DiskManagerRandomReadBufferedReopen)
     ->Arg(kLargeBenchmarkPageCount)
     ->Unit(benchmark::kMicrosecond);
 
-// The cache-pollution variants are intentionally only run for the larger
-// regular workload to keep default benchmark runtime reasonable.
 BENCHMARK(BM_DiskManagerSequentialReadDirectAfterCachePollution)
     ->Arg(kLargeBenchmarkPageCount)
     ->Unit(benchmark::kMicrosecond);
