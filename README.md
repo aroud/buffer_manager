@@ -96,3 +96,17 @@ Buffered I/O is faster for sequential workloads because the operating system can
 For large random writes, direct and buffered modes converge to roughly the same throughput, around 48 MiB/s. In this case the storage access pattern dominates, and the OS cache provides little benefit.
 
 `Sync()` is much more expensive than unsynced page writes, so durability barriers are kept explicit and outside the normal write path.
+
+## FrameAllocator benchmark summary
+
+The frame allocator uses a compact bitmap with one bit per frame. Allocation
+scans 64 frames at a time and uses `std::countr_zero` to find a free bit.
+
+| Benchmark | Frames | Time | Throughput |
+|---|---:|---:|---:|
+| Allocate + free one frame | 1,024 | 7.04 ns | 142 M frames/s |
+| Allocate + free one frame | 16,384 | 7.14 ns | 140 M frames/s |
+| Allocate all + free all | 1,024 | 9.30 µs | 220 M frames/s |
+| Allocate all + free all | 16,384 | 148 µs | 221 M frames/s |
+| Allocate until full | 1,024 | 7.98 µs | 130 M frames/s |
+| Allocate until full | 16,384 | 116 µs | 141 M frames/s |
