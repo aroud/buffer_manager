@@ -2,9 +2,10 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(
   buffer_manager_tests
-  testing_infra_test.cc
+  clock_replacer_test.cc
   disk_manager_test.cc
-  clock_replacer_test.cc)
+  frame_allocator_test.cc
+  testing_infra_test.cc)
 
 target_include_directories(
   buffer_manager_tests
