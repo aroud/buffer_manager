@@ -2,6 +2,7 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(
   buffer_manager_tests
+  buffer_manager_async_test.cc
   buffer_manager_test.cc
   clock_replacer_test.cc
   disk_manager_test.cc

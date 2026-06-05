@@ -75,6 +75,24 @@
       ]
     },
     {
+      "label": "cmake: build main benchmark",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "benchmarks",
+        "--target",
+        "main_benchmark"
+      ],
+      "dependsOn": [
+        "cmake: configure benchmarks"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
       "label": "benchmarks: run",
       "type": "shell",
       "command": "${workspaceFolder}/build/benchmarks/benchmarks/buffer_manager_benchmarks",
@@ -95,6 +113,15 @@
       ],
       "dependsOn": [
         "cmake: build benchmarks"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "benchmarks: run main",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/benchmarks/benchmarks/main_benchmark",
+      "dependsOn": [
+        "cmake: build main benchmark"
       ],
       "problemMatcher": []
     },
