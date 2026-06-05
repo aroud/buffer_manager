@@ -11,14 +11,10 @@ namespace buffer_manager {
 
 enum class PageState : std::uint8_t {
   kUnused,
-  kResident,
   kNonResident,
-};
-
-struct PageMeta final {
-  PageState state = PageState::kUnused;
-  std::optional<FrameId> frame_id;
-  std::uint64_t disk_offset = 0;
+  kLoading,
+  kResident,
+  kEvicting,
 };
 
 class PageTable final {
@@ -34,19 +30,34 @@ class PageTable final {
   [[nodiscard]] PageId AllocatePageId();
   void FreePageId(PageId page_id);
 
-  [[nodiscard]] PageMeta& Get(PageId page_id);
-  [[nodiscard]] const PageMeta& Get(PageId page_id) const;
-
   [[nodiscard]] bool IsAllocated(PageId page_id) const;
+  [[nodiscard]] bool IsResident(PageId page_id) const;
+  [[nodiscard]] PageState State(PageId page_id) const;
+  [[nodiscard]] std::optional<FrameId> FrameForPage(PageId page_id) const;
+
+  void SetLoading(PageId page_id, FrameId frame_id);
+  void SetResident(PageId page_id, FrameId frame_id);
+  void SetNonResident(PageId page_id);
+  void SetEvicting(PageId page_id);
+
   [[nodiscard]] PageId max_page_count() const noexcept;
+  [[nodiscard]] PageId allocated_count() const noexcept;
 
  private:
+  struct Entry final {
+    PageState state = PageState::kUnused;
+    std::optional<FrameId> frame_id;
+  };
+
   void ValidatePageId(PageId page_id) const;
+  [[nodiscard]] Entry& EntryFor(PageId page_id);
+  [[nodiscard]] const Entry& EntryFor(PageId page_id) const;
 
   PageId max_page_count_ = 0;
   PageId next_page_id_ = 0;
+  PageId allocated_count_ = 0;
 
-  std::vector<PageMeta> pages_;
+  std::vector<Entry> pages_;
   std::vector<PageId> free_page_ids_;
 };
 
