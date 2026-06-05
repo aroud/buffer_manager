@@ -5,6 +5,7 @@ add_executable(
   clock_replacer_test.cc
   disk_manager_test.cc
   frame_allocator_test.cc
+  page_table_test.cc
   testing_infra_test.cc)
 
 target_include_directories(
