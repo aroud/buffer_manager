@@ -30,19 +30,21 @@ class FrameAllocator final {
   [[nodiscard]] bool IsAllocated(FrameId frame_id) const;
 
   [[nodiscard]] std::size_t frame_count() const noexcept;
-  [[nodiscard]] std::size_t used_count() const noexcept;
+  [[nodiscard]] std::size_t allocated_count() const noexcept;
+  [[nodiscard]] std::size_t free_count() const noexcept;
 
  private:
   static constexpr std::size_t kBitsPerWord = 64;
 
-  [[nodiscard]] std::size_t WordIndex(FrameId frame_id) const;
-  [[nodiscard]] std::uint64_t BitMask(FrameId frame_id) const;
+  [[nodiscard]] static std::size_t WordIndex(FrameId frame_id);
+  [[nodiscard]] static std::uint64_t BitMask(FrameId frame_id);
 
   void ValidateFrameId(FrameId frame_id) const;
+  void ValidateAllocatedFrameId(FrameId frame_id) const;
   void MaskUnusedTailBits();
 
   std::size_t frame_count_ = 0;
-  std::size_t used_count_ = 0;
+  std::size_t allocated_count_ = 0;
   std::size_t next_search_word_ = 0;
 
   std::vector<Page> frames_;
