@@ -11,7 +11,7 @@ namespace buffer_manager {
 namespace {
 
 constexpr std::int64_t kSmallFrameCount = 1024;
-constexpr std::int64_t kLargeFrameCount = 16 * kSmallFrameCount;
+constexpr std::int64_t kLargeFrameCount = std::int64_t{16} * kSmallFrameCount;
 
 [[nodiscard]] std::size_t FrameCountFromState(const benchmark::State& state) {
   return static_cast<std::size_t>(state.range(0));
@@ -27,7 +27,7 @@ void BM_FrameAllocatorAllocateAndFreeOne(benchmark::State& state) {
   FrameAllocator allocator(frame_count);
 
   for (auto _ : state) {
-    const std::optional<FrameId> frame_id = allocator.AllocateFrame();
+    std::optional<FrameId> frame_id = allocator.AllocateFrame();
     benchmark::DoNotOptimize(frame_id);
 
     allocator.FreeFrame(*frame_id);

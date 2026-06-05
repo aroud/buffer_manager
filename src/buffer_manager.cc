@@ -589,7 +589,7 @@ std::optional<FrameId> BufferManager::AcquireFrameForFetchLocked(
     }
 
     if (auto free_frame = frame_allocator_.AllocateFrame()) {
-      return *free_frame;
+      return free_frame;
     }
 
     std::optional<FrameId> victim = replacer_->Victim();

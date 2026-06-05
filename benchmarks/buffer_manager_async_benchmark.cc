@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <condition_variable>
 #include <cstddef>
 #include <deque>
@@ -587,7 +588,7 @@ std::optional<FrameId> BufferManager::AcquireFrameForFetchLocked(
     }
 
     if (auto free_frame = frame_allocator_.AllocateFrame()) {
-      return *free_frame;
+      return free_frame;
     }
 
     std::optional<FrameId> victim = replacer_->Victim();
@@ -649,14 +650,10 @@ std::optional<FrameId> BufferManager::AcquireFrameForFetchLocked(
 }
 
 bool BufferManager::HasTransientFrameLocked() const noexcept {
-  for (const FrameMeta& meta : frame_meta_) {
-    if (meta.state == FrameState::kLoading ||
-        meta.state == FrameState::kEvicting) {
-      return true;
-    }
-  }
-
-  return false;
+  return std::ranges::any_of(frame_meta_, [](const FrameMeta& meta) {
+    return meta.state == FrameState::kLoading ||
+           meta.state == FrameState::kEvicting;
+  });
 }
 
 void BufferManager::RestoreEvictedFrameLocked(FrameId frame_id, PageId page_id,

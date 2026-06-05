@@ -23,7 +23,7 @@ constexpr std::int64_t kSmallFrameCount = 1024;
 constexpr std::int64_t kSmallPageCount = 1024;
 
 constexpr std::int64_t kScanFrameCount = 1024;
-constexpr std::int64_t kScanPageCount = 16 * 1024;
+constexpr std::int64_t kScanPageCount = std::int64_t{16} * 1024;
 
 constexpr std::int64_t kFlushPageCount = 1024;
 

@@ -19,7 +19,8 @@ namespace buffer_manager {
 namespace {
 
 constexpr std::int64_t kSmallBenchmarkPageCount = 1024;
-constexpr std::int64_t kLargeBenchmarkPageCount = 16 * kSmallBenchmarkPageCount;
+constexpr std::int64_t kLargeBenchmarkPageCount =
+    std::int64_t{16} * kSmallBenchmarkPageCount;
 
 // 1,048,576 pages * 4 KiB = 4 GiB.
 constexpr std::int64_t kHugeBenchmarkPageCount = std::int64_t{1024} * 1024;
