@@ -11,7 +11,6 @@
 #include <optional>
 #include <random>
 #include <stdexcept>
-#include <string>
 #include <thread>
 #include <vector>
 
@@ -30,7 +29,7 @@ struct Scenario final {
   std::uint64_t request_count = 0;
 };
 
-enum class BenchKind {
+enum class BenchKind : uint8_t {
   kSingleThreadedSync,
   kMultiThreadedSync,
   kMultiThreadedAsync,
@@ -153,8 +152,7 @@ void RunBench(BufferManagerAdapter& buffer_manager,
 }
 
 void RetryInflightRequests(
-    BufferManagerAdapter& buffer_manager, std::size_t thread_id,
-    std::atomic_bool& bench_success,
+    std::size_t thread_id, std::atomic_bool& bench_success,
     std::vector<std::optional<BufferManagerAdapter::AsyncRequest>>&
         in_flight_requests,
     std::size_t& in_flight_count, bool verify, unsigned verify_shift) {
@@ -205,9 +203,8 @@ void RunAsyncBench(BufferManagerAdapter& buffer_manager,
 
   for (std::size_t i = begin; i < end; ++i) {
     while (in_flight_count == max_in_flight) {
-      RetryInflightRequests(buffer_manager, thread_id, bench_success,
-                            in_flight_requests, in_flight_count, verify,
-                            verify_shift);
+      RetryInflightRequests(thread_id, bench_success, in_flight_requests,
+                            in_flight_count, verify, verify_shift);
 
       if (!bench_success.load(std::memory_order_acquire)) {
         return;
@@ -236,9 +233,8 @@ void RunAsyncBench(BufferManagerAdapter& buffer_manager,
         return;
       }
 
-      RetryInflightRequests(buffer_manager, thread_id, bench_success,
-                            in_flight_requests, in_flight_count, verify,
-                            verify_shift);
+      RetryInflightRequests(thread_id, bench_success, in_flight_requests,
+                            in_flight_count, verify, verify_shift);
     } catch (...) {
       bench_success.store(false, std::memory_order_release);
       return;
@@ -246,9 +242,8 @@ void RunAsyncBench(BufferManagerAdapter& buffer_manager,
   }
 
   while (in_flight_count != 0) {
-    RetryInflightRequests(buffer_manager, thread_id, bench_success,
-                          in_flight_requests, in_flight_count, verify,
-                          verify_shift);
+    RetryInflightRequests(thread_id, bench_success, in_flight_requests,
+                          in_flight_count, verify, verify_shift);
 
     if (!bench_success.load(std::memory_order_acquire)) {
       return;
@@ -463,7 +458,7 @@ void RunAsyncBench(BufferManagerAdapter& buffer_manager,
 }  // namespace buffer_manager::main_benchmark
 
 int main() {
-  using namespace buffer_manager::main_benchmark;
+  namespace bm = buffer_manager::main_benchmark;
 
   try {
     const std::filesystem::path file_path = "bfr_mngr_file";
@@ -487,7 +482,7 @@ int main() {
     constexpr std::uint64_t kRequestCountLowIo = kTotalRequestCount >> 3;
     constexpr std::uint64_t kRequestCountHighIo = kTotalRequestCount >> 5;
 
-    const Scenario scenarios[] = {
+    const bm::Scenario scenarios[] = {
         {
             .memory_capacity = kMemCapacity,
             .disk_capacity = kDiskCapacityNoIo,
@@ -526,17 +521,18 @@ int main() {
         },
     };
 
-    const BenchType bench_types[] = {
-        BenchType::SingleThreadedSync(),
-        BenchType::MultiThreadedSync(kThreadCount),
-        BenchType::MultiThreadedAsync(kThreadCount),
+    const bm::BenchType bench_types[] = {
+        bm::BenchType::SingleThreadedSync(),
+        bm::BenchType::MultiThreadedSync(kThreadCount),
+        bm::BenchType::MultiThreadedAsync(kThreadCount),
     };
 
-    for (const Scenario& scenario : scenarios) {
-      for (const BenchType& bench_type : bench_types) {
-        (void)RunBenchmark(scenario.memory_capacity, scenario.disk_capacity,
-                           kBenchmarkPageSize, bench_type, kVerify,
-                           scenario.theta, scenario.request_count, file_path);
+    for (const bm::Scenario& scenario : scenarios) {
+      for (const bm::BenchType& bench_type : bench_types) {
+        (void)bm::RunBenchmark(scenario.memory_capacity, scenario.disk_capacity,
+                               kBenchmarkPageSize, bench_type, kVerify,
+                               scenario.theta, scenario.request_count,
+                               file_path);
       }
     }
 
