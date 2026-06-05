@@ -1,6 +1,7 @@
 find_package(benchmark CONFIG REQUIRED)
 
 add_executable(buffer_manager_benchmarks
+  buffer_manager_benchmark.cc
   benchmark_infra.cc
   disk_manager_benchmark.cc
   frame_allocator_benchmark.cc)
