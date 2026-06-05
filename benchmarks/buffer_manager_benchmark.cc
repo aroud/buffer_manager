@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <random>
 #include <string>
 #include <string_view>
@@ -135,22 +136,25 @@ void ReportPageOperations(benchmark::State& state,
 void BM_BufferManagerFetchResident(benchmark::State& state) {
   const auto page_count = static_cast<std::size_t>(state.range(0));
 
-  state.PauseTiming();
-
-  TempDiskFile file("bm_fetch_resident");
-  BufferManager buffer_manager(MakeOptions(file.path(), page_count,
-                                           static_cast<PageId>(page_count),
-                                           IoMode::kBuffered));
-
-  const std::vector<PageId> page_ids =
-      CreateDirtyPages(buffer_manager, page_count);
-
+  std::optional<TempDiskFile> file;
+  std::optional<BufferManager> buffer_manager;
+  std::vector<PageId> page_ids;
   std::size_t page_index = 0;
-
-  state.ResumeTiming();
+  bool initialized = false;
 
   for (auto _ : state) {
-    PageGuard guard = buffer_manager.FetchPage(page_ids[page_index]);
+    if (!initialized) {
+      state.PauseTiming();
+      file.emplace("bm_fetch_resident");
+      buffer_manager.emplace(MakeOptions(file->path(), page_count,
+                                         static_cast<PageId>(page_count),
+                                         IoMode::kBuffered));
+      page_ids = CreateDirtyPages(*buffer_manager, page_count);
+      initialized = true;
+      state.ResumeTiming();
+    }
+
+    PageGuard guard = buffer_manager->FetchPage(page_ids[page_index]);
     benchmark::DoNotOptimize(guard.page().data.data());
 
     ++page_index;
@@ -230,21 +234,24 @@ void BenchmarkSequentialScan(benchmark::State& state, IoMode io_mode,
   const auto frame_count = static_cast<std::size_t>(state.range(0));
   const auto page_count = static_cast<std::size_t>(state.range(1));
 
-  state.PauseTiming();
-
-  TempDiskFile file(std::string{name});
-  BufferManager buffer_manager(MakeOptions(
-      file.path(), frame_count, static_cast<PageId>(page_count), io_mode));
-
-  const std::vector<PageId> page_ids =
-      CreateDirtyPages(buffer_manager, page_count);
-
+  std::optional<TempDiskFile> file;
+  std::optional<BufferManager> buffer_manager;
+  std::vector<PageId> page_ids;
   std::size_t page_index = 0;
-
-  state.ResumeTiming();
+  bool initialized = false;
 
   for (auto _ : state) {
-    PageGuard guard = buffer_manager.FetchPage(page_ids[page_index]);
+    if (!initialized) {
+      state.PauseTiming();
+      file.emplace(std::string{name});
+      buffer_manager.emplace(MakeOptions(
+          file->path(), frame_count, static_cast<PageId>(page_count), io_mode));
+      page_ids = CreateDirtyPages(*buffer_manager, page_count);
+      initialized = true;
+      state.ResumeTiming();
+    }
+
+    PageGuard guard = buffer_manager->FetchPage(page_ids[page_index]);
     benchmark::DoNotOptimize(guard.page().data.data());
 
     ++page_index;
@@ -261,23 +268,25 @@ void BenchmarkRandomRead(benchmark::State& state, IoMode io_mode,
   const auto frame_count = static_cast<std::size_t>(state.range(0));
   const auto page_count = static_cast<std::size_t>(state.range(1));
 
-  state.PauseTiming();
-
-  TempDiskFile file(std::string{name});
-  BufferManager buffer_manager(MakeOptions(
-      file.path(), frame_count, static_cast<PageId>(page_count), io_mode));
-
-  CreateDirtyPages(buffer_manager, page_count);
-
-  const std::vector<PageId> page_ids =
-      MakeRandomPageIds(page_count, kRandomRequestCount);
-
+  std::optional<TempDiskFile> file;
+  std::optional<BufferManager> buffer_manager;
+  std::vector<PageId> page_ids;
   std::size_t request_index = 0;
-
-  state.ResumeTiming();
+  bool initialized = false;
 
   for (auto _ : state) {
-    PageGuard guard = buffer_manager.FetchPage(page_ids[request_index]);
+    if (!initialized) {
+      state.PauseTiming();
+      file.emplace(std::string{name});
+      buffer_manager.emplace(MakeOptions(
+          file->path(), frame_count, static_cast<PageId>(page_count), io_mode));
+      CreateDirtyPages(*buffer_manager, page_count);
+      page_ids = MakeRandomPageIds(page_count, kRandomRequestCount);
+      initialized = true;
+      state.ResumeTiming();
+    }
+
+    PageGuard guard = buffer_manager->FetchPage(page_ids[request_index]);
     benchmark::DoNotOptimize(guard.page().data.data());
 
     ++request_index;
@@ -294,25 +303,27 @@ void BenchmarkRandomWriteDirty(benchmark::State& state, IoMode io_mode,
   const auto frame_count = static_cast<std::size_t>(state.range(0));
   const auto page_count = static_cast<std::size_t>(state.range(1));
 
-  state.PauseTiming();
-
-  TempDiskFile file(std::string{name});
-  BufferManager buffer_manager(MakeOptions(
-      file.path(), frame_count, static_cast<PageId>(page_count), io_mode));
-
-  CreateDirtyPages(buffer_manager, page_count);
-
-  const std::vector<PageId> page_ids =
-      MakeRandomPageIds(page_count, kRandomRequestCount);
-
+  std::optional<TempDiskFile> file;
+  std::optional<BufferManager> buffer_manager;
+  std::vector<PageId> page_ids;
   std::size_t request_index = 0;
-
-  state.ResumeTiming();
+  bool initialized = false;
 
   for (auto _ : state) {
+    if (!initialized) {
+      state.PauseTiming();
+      file.emplace(std::string{name});
+      buffer_manager.emplace(MakeOptions(
+          file->path(), frame_count, static_cast<PageId>(page_count), io_mode));
+      CreateDirtyPages(*buffer_manager, page_count);
+      page_ids = MakeRandomPageIds(page_count, kRandomRequestCount);
+      initialized = true;
+      state.ResumeTiming();
+    }
+
     const PageId page_id = page_ids[request_index];
 
-    PageGuard guard = buffer_manager.FetchPage(page_id);
+    PageGuard guard = buffer_manager->FetchPage(page_id);
     TouchPage(guard.page(), page_id,
               static_cast<std::size_t>(state.iterations()));
     guard.MarkDirty();
