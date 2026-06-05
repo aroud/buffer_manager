@@ -79,7 +79,7 @@
       "type": "shell",
       "command": "${workspaceFolder}/build/benchmarks/benchmarks/buffer_manager_benchmarks",
       "args": [
-        "--benchmark_filter='^(BM_ToolingSmoke|BM_DiskManager(Sequential|Random|WriteThenSync).*)$'"
+        "--benchmark_filter='^(BM_ToolingSmoke|BM_FrameAllocator.*|BM_DiskManager(Sequential|Random|WriteThenSync).*)$'"
       ],
       "dependsOn": [
         "cmake: build benchmarks"
