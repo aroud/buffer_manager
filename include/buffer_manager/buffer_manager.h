@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -21,6 +22,7 @@ namespace buffer_manager {
 struct BufferManagerOptions final {
   DiskManagerOptions disk;
   std::size_t frame_count = 0;
+  std::size_t async_worker_count = 2;
 };
 
 class BufferManager;
@@ -71,17 +73,27 @@ class BufferManager final {
   [[nodiscard]] PageGuard NewPage();
   [[nodiscard]] PageGuard FetchPage(PageId page_id);
 
+  [[nodiscard]] std::future<PageGuard> NewPageAsync();
+  [[nodiscard]] std::future<PageGuard> FetchPageAsync(PageId page_id);
+
   void FlushPage(PageId page_id);
   void FlushAllPages();
   void Sync() const;
 
+  [[nodiscard]] std::future<void> FlushPageAsync(PageId page_id);
+  [[nodiscard]] std::future<void> FlushAllPagesAsync();
+  [[nodiscard]] std::future<void> SyncAsync();
+
   void DeletePage(PageId page_id);
+  [[nodiscard]] std::future<void> DeletePageAsync(PageId page_id);
 
   [[nodiscard]] std::size_t frame_count() const noexcept;
   [[nodiscard]] PageId max_page_count() const noexcept;
 
  private:
   friend class PageGuard;
+
+  class AsyncExecutor;
 
   enum class FrameState : std::uint8_t {
     kFree,
@@ -99,6 +111,10 @@ class BufferManager final {
   };
 
   [[nodiscard]] FrameId AcquireFrameLocked(std::unique_lock<std::mutex>& lock);
+  [[nodiscard]] std::optional<FrameId> AcquireFrameForFetchLocked(
+      PageId page_id, std::unique_lock<std::mutex>& lock);
+  [[nodiscard]] bool HasTransientFrameLocked() const noexcept;
+
   void RestoreEvictedFrameLocked(FrameId frame_id, PageId page_id, bool dirty,
                                  std::uint64_t dirty_epoch);
 
@@ -121,6 +137,8 @@ class BufferManager final {
 
   mutable std::mutex mutex_;
   std::condition_variable state_changed_;
+
+  std::unique_ptr<AsyncExecutor> async_executor_;
 };
 
 }  // namespace buffer_manager
