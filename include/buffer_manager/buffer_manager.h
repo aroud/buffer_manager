@@ -1,59 +1,65 @@
 #ifndef BUFFER_MANAGER_BUFFER_MANAGER_H_
 #define BUFFER_MANAGER_BUFFER_MANAGER_H_
 
+#include <condition_variable>
 #include <cstddef>
-#include <filesystem>
+#include <cstdint>
 #include <memory>
+#include <mutex>
+#include <optional>
+#include <vector>
 
 #include "buffer_manager/page.h"
 #include "buffer_manager/types.h"
+#include "page/frame_allocator.h"
+#include "page/page_table.h"
+#include "replacement/replacer.h"
+#include "storage/disk_manager.h"
 
 namespace buffer_manager {
 
-class BufferManager;
-
 struct BufferManagerOptions final {
+  DiskManagerOptions disk;
   std::size_t frame_count = 0;
-  PageId max_page_count = 0;
-  std::filesystem::path backing_file;
 };
+
+class BufferManager;
 
 class PageGuard final {
  public:
-  PageGuard() noexcept;
+  PageGuard() = default;
   ~PageGuard() noexcept;
-
-  PageGuard(const PageGuard&) = delete;
-  PageGuard& operator=(const PageGuard&) = delete;
 
   PageGuard(PageGuard&& other) noexcept;
   PageGuard& operator=(PageGuard&& other) noexcept;
 
-  [[nodiscard]] bool is_valid() const noexcept;
+  PageGuard(const PageGuard&) = delete;
+  PageGuard& operator=(const PageGuard&) = delete;
 
+  [[nodiscard]] bool valid() const noexcept;
   [[nodiscard]] PageId page_id() const;
   [[nodiscard]] Page& page();
   [[nodiscard]] const Page& page() const;
 
   void MarkDirty();
-  void Flush();
-
-  // Releases the pin before destruction, safe to call repeatedly
-  void Drop() noexcept;
+  void Drop();
 
  private:
   friend class BufferManager;
 
-  PageGuard(BufferManager* manager, PageId page_id, Page* page) noexcept;
+  PageGuard(BufferManager* buffer_manager, PageId page_id, FrameId frame_id,
+            Page* page) noexcept;
 
-  BufferManager* manager_ = nullptr;
+  BufferManager* buffer_manager_ = nullptr;
   PageId page_id_ = 0;
+  FrameId frame_id_ = 0;
   Page* page_ = nullptr;
 };
 
 class BufferManager final {
  public:
-  explicit BufferManager(BufferManagerOptions options);
+  explicit BufferManager(BufferManagerOptions options,
+                         std::unique_ptr<Replacer> replacer = nullptr);
   ~BufferManager();
 
   BufferManager(const BufferManager&) = delete;
@@ -62,17 +68,14 @@ class BufferManager final {
   BufferManager(BufferManager&&) = delete;
   BufferManager& operator=(BufferManager&&) = delete;
 
-  // Allocates a new logical page and returns it pinned
-  [[nodiscard]] PageGuard AllocatePage();
-
-  // Loads an existing logical page and returns it pinned
+  [[nodiscard]] PageGuard NewPage();
   [[nodiscard]] PageGuard FetchPage(PageId page_id);
 
-  // Permanently deletes a logical page, throws if it is pinned
-  void DeletePage(PageId page_id);
-
-  // Explicitly flushes all dirty resident pages, throws on I/O failure
+  void FlushPage(PageId page_id);
   void FlushAllPages();
+  void Sync() const;
+
+  void DeletePage(PageId page_id);
 
   [[nodiscard]] std::size_t frame_count() const noexcept;
   [[nodiscard]] PageId max_page_count() const noexcept;
@@ -80,12 +83,44 @@ class BufferManager final {
  private:
   friend class PageGuard;
 
-  void UnpinPage(PageId page_id) noexcept;
-  void MarkDirty(PageId page_id);
-  void FlushPage(PageId page_id);
+  enum class FrameState : std::uint8_t {
+    kFree,
+    kLoading,
+    kResident,
+    kEvicting,
+  };
 
-  class Impl;
-  std::unique_ptr<Impl> impl_;
+  struct FrameMeta final {
+    std::optional<PageId> page_id;
+    std::uint32_t pin_count = 0;
+    bool dirty = false;
+    std::uint64_t dirty_epoch = 0;
+    FrameState state = FrameState::kFree;
+  };
+
+  [[nodiscard]] FrameId AcquireFrameLocked(std::unique_lock<std::mutex>& lock);
+  void RestoreEvictedFrameLocked(FrameId frame_id, PageId page_id, bool dirty,
+                                 std::uint64_t dirty_epoch);
+
+  [[nodiscard]] PageGuard MakeGuardLocked(PageId page_id, FrameId frame_id);
+  void PinResidentFrameLocked(PageId page_id, FrameId frame_id);
+  void UnpinFrameLocked(FrameId frame_id);
+
+  void DropPageGuard(PageId page_id, FrameId frame_id);
+  void MarkDirty(PageId page_id, FrameId frame_id);
+
+  void ValidateOptions() const;
+
+  BufferManagerOptions options_;
+
+  DiskManager disk_manager_;
+  FrameAllocator frame_allocator_;
+  PageTable page_table_;
+  std::unique_ptr<Replacer> replacer_;
+  std::vector<FrameMeta> frame_meta_;
+
+  mutable std::mutex mutex_;
+  std::condition_variable state_changed_;
 };
 
 }  // namespace buffer_manager
